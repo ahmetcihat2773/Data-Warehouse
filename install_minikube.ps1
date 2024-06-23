@@ -1,6 +1,5 @@
 # Check if running as Administrator
-if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
-{
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Write-Warning "You do not have Administrator rights to run this script. Please run this script as an Administrator."
     exit
 }
@@ -73,9 +72,45 @@ if ($minikubePath -notlike "*C:\ProgramData\chocolatey\bin*") {
     Write-Output "Added Minikube to system PATH. Please restart your computer or PowerShell session to apply changes."
 }
 
-# Start Minikube with Docker driver
-Write-Output "Starting Minikube with Docker driver..."
-C:\ProgramData\chocolatey\bin\minikube.exe start --driver=docker
+# Function to check if Chocolatey is installed
+function Ensure-Chocolatey {
+    $choco = Get-Command choco -ErrorAction SilentlyContinue
+    if (-not $choco) {
+        Write-Output "Chocolatey is not installed. Installing Chocolatey..."
+        Set-ExecutionPolicy Bypass -Scope Process -Force;
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;
+        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    }
+}
+
+# Check if k9s is installed
+$k9s = Get-Command k9s -ErrorAction SilentlyContinue
+
+if (-not $k9s) {
+    Write-Output "k9s is not installed. Installing k9s..."
+
+    # Ensure Chocolatey is installed
+    Ensure-Chocolatey
+
+    # Install k9s using Chocolatey
+    choco install k9s -y
+} else {
+    Write-Output "k9s is already installed."
+}
+
+# Function to check if Minikube is running
+function Is-MinikubeRunning {
+    $minikubeStatus = & minikube status --format "{{.Host}}"
+    return $minikubeStatus -eq "Running"
+}
+
+# Start Minikube with Docker driver if not already running
+if (-not (Is-MinikubeRunning)) {
+    Write-Output "Starting Minikube with Docker driver..."
+    C:\ProgramData\chocolatey\bin\minikube.exe start --driver=docker
+} else {
+    Write-Output "Minikube is already running."
+}
 
 # Verify Minikube installation
 Write-Output "Verifying Minikube installation..."
