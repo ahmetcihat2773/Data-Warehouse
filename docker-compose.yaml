@@ -1,27 +1,54 @@
 version: '3.8'
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile.app
+  # PostgreSQL Source Database
+  postgres-source:
+    image: postgres:15-alpine
+    container_name: postgres-source
     environment:
-      DATABASE_URL: postgresql://myuser:mypassword@db:5432/mydatabase
-    depends_on:
-      - db
-    volumes:
-      - ./app:/app
-
-  db:
-    image: postgres:latest
-    environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: myypassword
-      POSTGRES_DB: mydatabase
+      POSTGRES_DB: source_db
+      POSTGRES_USER: source_user
+      POSTGRES_PASSWORD: source_password
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres_source_data:/var/lib/postgresql/data
+      - ./db/source:/docker-entrypoint-initdb.d
+    networks:
+      - dwh-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U source_user -d source_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL Sink Database  
+  postgres-sink:
+    image: postgres:15-alpine
+    container_name: postgres-sink
+    environment:
+      POSTGRES_DB: sink_db
+      POSTGRES_USER: sink_user
+      POSTGRES_PASSWORD: sink_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_sink_data:/var/lib/postgresql/data
+      - ./db/sink:/docker-entrypoint-initdb.d
+    networks:
+      - dwh-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sink_user -d sink_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  postgres-data:
+  postgres_source_data:
+  postgres_sink_data:
+
+networks:
+  dwh-network:
+    driver: bridge
