@@ -1,0 +1,19 @@
+{
+  "name": "postgres-source-connector",
+  "config": {
+    "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+    "tasks.max": "3",
+    "connection.url": "jdbc:postgresql://postgres-source:5432/source_db",
+    "connection.user": "source_user",
+    "connection.password": "source_password",
+    "mode": "incrementing",
+    "incrementing.column.name": "id",
+    "table.whitelist": "customers,products,orders",
+    "topic.prefix": "postgres-source-",
+    "poll.interval.ms": 5000,
+    "batch.max.rows": 500,
+    "table.poll.interval.ms": 10000,
+    "timestamp.delay.interval.ms": 0,
+    "db.timezone": "UTC"
+  }
+} 
