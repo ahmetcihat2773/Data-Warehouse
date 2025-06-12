@@ -1,0 +1,31 @@
+{
+  "name": "postgres-jdbc-sink-connector",
+  "config": {
+    "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+    "tasks.max": "2",
+    "connection.url": "jdbc:postgresql://postgres-sink:5432/sink_db",
+    "connection.user": "sink_user",
+    "connection.password": "sink_password",
+    "topics": "users,orders",
+    "auto.create": "false",
+    "auto.evolve": "true",
+    "insert.mode": "upsert",
+    "pk.mode": "record_key",
+    "pk.fields": "id",
+    "table.name.format": "${topic}",
+    "batch.size": 500,
+    "max.retries": 10,
+    "retry.backoff.ms": 3000,
+    "db.timezone": "UTC",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+    "transforms": "unwrap,addMetadata",
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.drop.tombstones": "false",
+    "transforms.unwrap.delete.handling.mode": "rewrite",
+    "transforms.unwrap.add.headers": "op,source.ts_ms",
+    "transforms.addMetadata.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+    "transforms.addMetadata.timestamp.field": "sink_timestamp"
+  }
+} 

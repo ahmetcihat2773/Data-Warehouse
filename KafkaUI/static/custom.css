@@ -1,0 +1,112 @@
+/* Custom Kafka UI Styling */
+/* Data Warehouse Project Customization */
+
+:root {
+  --primary-color: #2563eb;
+  --secondary-color: #1e40af;
+  --success-color: #059669;
+  --warning-color: #d97706;
+  --error-color: #dc2626;
+  --background-dark: #1f2937;
+  --background-light: #f9fafb;
+}
+
+/* Header customization */
+.header {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  padding: 1rem;
+}
+
+.header h1::after {
+  content: " - Data Warehouse";
+  font-size: 0.8em;
+  opacity: 0.8;
+}
+
+/* Sidebar customization */
+.sidebar {
+  background-color: var(--background-dark);
+  border-right: 1px solid #374151;
+}
+
+/* Topic cards styling */
+.topic-card {
+  border-left: 4px solid var(--primary-color);
+  transition: transform 0.2s ease;
+}
+
+.topic-card:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+/* Connector status indicators */
+.connector-running {
+  color: var(--success-color);
+  font-weight: bold;
+}
+
+.connector-failed {
+  color: var(--error-color);
+  font-weight: bold;
+}
+
+.connector-paused {
+  color: var(--warning-color);
+  font-weight: bold;
+}
+
+/* Custom button styling */
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+/* Message preview styling */
+.message-content {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+/* Dark theme adjustments */
+@media (prefers-color-scheme: dark) {
+  .message-content {
+    background-color: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+}
+
+/* Consumer group lag indicators */
+.lag-high {
+  background-color: var(--error-color);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+}
+
+.lag-medium {
+  background-color: var(--warning-color);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+}
+
+.lag-low {
+  background-color: var(--success-color);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+} 

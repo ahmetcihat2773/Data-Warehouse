@@ -1,30 +1,23 @@
 Main Purpose :
 
-Source database den sink database a, kafka connectorler araciligiyla veri aktarimi.
+Source database den sink database a, kafka connectorler araciligiyla veri aktarimi. Ilk basta postgres source dan postgres sinke veri aktarimi 
+gerekecek. Sonrasinda desteklenen databaseler zamanla arttirilacak. Hatta dosya dinleme klasör dinleme tarzi seylerde desteklenecek. 
 
-Source ve sink databaselerimiz burada postgres databaseler. 
-
-Spin up the product with docker compose file.
-
-
-curl -X POST -H "Content-Type: application/json" --data-binary @config/source-connector.json http://localhost:8083/connectors
-
-curl http://localhost:8083/connectors
-
-curl http://localhost:8083/connectors/postgres-source-connector/status
-
-docker exec kafka kafka-topics --bootstrap-server localhost:9092 --list
+Strimzi, debezium kullanilacak.
 
 
+Schema Registry eklenmesi (veri şeması yönetimi için)
+Dead Letter Queue implementasyonu (hata yönetimi)
+Monitoring/Alerting sistemi (Kafka Connect durumu izleme)
+Data validation mekanizmaları
 
-curl -X POST -H "Content-Type: application/json" --data-binary @config/sink-connector.json http://localhost:8083/connectors
+Bu repository de test icin kafka broker, kafka connect, ve source ve sink db ler olusturulacak boylelik data kopyalama gerceklestirilmis olacak. 
 
 
+Faz 1: PostgreSQL → PostgreSQL
+Faz 2: Diğer veritabanları (MySQL, MongoDB, etc.)
+Faz 3: File/Directory watching (gerçek zamanlı dosya işleme)
 
-curl -X DELETE http://localhost:8083/connectors/postgres-source-connector
-curl -X DELETE http://localhost:8083/connectors/postgres-sink-connector
 
-
-curl -X POST -H "Content-Type: application/json" --data-binary @config/source-connector.json http://localhost:8083/connectors
-
-curl -X POST -H "Content-Type: application/json" --data-binary @config/sink-connector.json http://localhost:8083/connectors
+Kafka Connectors kullanarak veritabanları arası veri transferi
+Event-driven data streaming yaklaşımı

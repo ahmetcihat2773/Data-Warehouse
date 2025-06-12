@@ -1,0 +1,51 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+logging:
+  level:
+    root: INFO
+    com.provectus: DEBUG
+    org.springframework.web: DEBUG
+    org.apache.kafka: WARN
+
+spring:
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+kafka:
+  clusters:
+    - name: local
+      bootstrapServers: kafka:29092
+      schemaRegistry: http://schema-registry:8081
+      kafkaConnect:
+        - name: data-warehouse-connect
+          address: http://kafka-connect:8083
+      properties:
+        security.protocol: PLAINTEXT
+      readonly: false
+      
+# Custom UI Settings
+ui:
+  theme: dark
+  showMetrics: true
+  pagination:
+    size: 25
+  
+# Performance Settings  
+server:
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 10 
