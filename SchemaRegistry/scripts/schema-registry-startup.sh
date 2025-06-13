@@ -16,12 +16,16 @@ mkdir -p /tmp/logs/schema-registry
 echo "Setting permissions..."
 echo "Using default permissions for Schema Registry"
 
+# Set default environment variables if not set
+export SCHEMA_REGISTRY_HOST_NAME=${SCHEMA_REGISTRY_HOST_NAME:-dwh-schema-registry}
+export SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=${SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS:-dwh-kafka:29092}
+
 # Function to wait for Kafka to be ready
 wait_for_kafka() {
     echo "Waiting for Kafka to be ready..."
-    while ! nc -z kafka 29092 > /dev/null 2>&1; do
+    while ! nc -z dwh-kafka 29092 > /dev/null 2>&1; do
         echo "Kafka is not ready yet. Waiting..."
-        sleep 5
+        sleep 2
     done
     echo "Kafka is ready!"
 }
@@ -90,7 +94,21 @@ configure_compatibility() {
     echo "Compatibility configuration completed"
 }
 
-# Wait for dependencies
+# Function to check required environment variables
+check_required_env_vars() {
+    if [ -z "$SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS" ]; then
+        echo "ERROR: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS is not set"
+        exit 1
+    fi
+}
+
+# Main execution
+echo "Starting Schema Registry..."
+
+# Check required environment variables
+check_required_env_vars
+
+# Wait for Kafka to be ready
 wait_for_kafka
 
 # Validate configuration
@@ -99,9 +117,11 @@ validate_config
 # Create schema topic
 create_schema_topic
 
-echo "Starting Schema Registry..."
+echo "Starting Schema Registry with configuration:"
+echo "Host Name: $SCHEMA_REGISTRY_HOST_NAME"
+echo "Kafka Bootstrap Servers: $SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS"
 
-# Start Schema Registry in background to allow post-startup configuration
+# Start Schema Registry in the background
 schema-registry-start /etc/schema-registry/schema-registry.properties &
 
 # Get the Schema Registry process ID
@@ -115,3 +135,6 @@ SCHEMA_REGISTRY_PID=$!
 
 # Wait for Schema Registry process
 wait $SCHEMA_REGISTRY_PID 
+
+# Keep the container running
+tail -f /tmp/logs/schema-registry/schema-registry.log 

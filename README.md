@@ -21,3 +21,7 @@ Faz 3: File/Directory watching (gerçek zamanlı dosya işleme)
 
 Kafka Connectors kullanarak veritabanları arası veri transferi
 Event-driven data streaming yaklaşımı
+
+
+
+SELECT rolname, rolpassword FROM pg_authid WHERE rolname = 'dwh_sink_user';"

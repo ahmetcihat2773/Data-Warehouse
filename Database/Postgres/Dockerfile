@@ -4,7 +4,7 @@ FROM postgres:15-alpine
 ENV POSTGRES_DB=source_db
 ENV POSTGRES_USER=source_user
 ENV POSTGRES_PASSWORD=source_password
-ENV POSTGRES_HOST_AUTH_METHOD=trust
+# Using default PostgreSQL authentication
 
 # Install additional extensions if needed
 RUN apk add --no-cache postgresql-contrib

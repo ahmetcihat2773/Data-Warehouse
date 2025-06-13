@@ -4,7 +4,7 @@ services:
     build:
       context: ./Database/Postgres
       dockerfile: Dockerfile
-    container_name: postgres-source
+    container_name: dwh-postgres-source
     env_file:
       - ./Database/Postgres/env.list
     ports:
@@ -19,22 +19,41 @@ services:
       timeout: 5s
       retries: 5
 
+  # Data Generator Service
+  data-generator:
+    build:
+      context: ./DataGenerator
+      dockerfile: Dockerfile
+    container_name: dwh-data-generator
+    depends_on:
+      postgres-source:
+        condition: service_healthy
+    environment:
+      - POSTGRES_DB=source_db
+      - POSTGRES_USER=source_user
+      - POSTGRES_PASSWORD=source_password
+      - POSTGRES_HOST=dwh-postgres-source
+      - POSTGRES_PORT=5432
+    networks:
+      - dwh-network
+    restart: unless-stopped
+
   # PostgreSQL Sink Database  
   postgres-sink:
     build:
       context: ./Database/PostgresSink
       dockerfile: Dockerfile
-    container_name: postgres-sink
+    container_name: dwh-postgres-sink
     env_file:
       - ./Database/PostgresSink/env.list
     ports:
-      - "5433:5432"
+      - "5435:5432"
     volumes:
       - postgres_sink_data:/var/lib/postgresql/data
     networks:
       - dwh-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sink_user -d sink_db"]
+      test: ["CMD-SHELL", "pg_isready -U sinkuser -d sinkdb"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,7 +63,7 @@ services:
     build:
       context: ./KafkaBrokers
       dockerfile: Dockerfile
-    container_name: kafka
+    container_name: dwh-kafka
     ports:
       - "9092:9092"
       - "9101:9101"
@@ -66,7 +85,7 @@ services:
     build:
       context: ./SchemaRegistry
       dockerfile: Dockerfile
-    container_name: schema-registry
+    container_name: dwh-schema-registry
     depends_on:
       kafka:
         condition: service_healthy
@@ -87,7 +106,7 @@ services:
     build:
       context: ./ConnectPostgres
       dockerfile: Dockerfile
-    container_name: kafka-connect
+    container_name: dwh-kafka-connect
     depends_on:
       kafka:
         condition: service_healthy
@@ -114,7 +133,7 @@ services:
     build:
       context: ./KafkaUI
       dockerfile: Dockerfile
-    container_name: kafka-ui
+    container_name: dwh-kafka-ui
     depends_on:
       kafka:
         condition: service_healthy

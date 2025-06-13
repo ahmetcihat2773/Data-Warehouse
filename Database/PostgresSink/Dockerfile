@@ -1,19 +1,15 @@
 FROM postgres:15-alpine
 
 # Environment variables for the sink database
-ENV POSTGRES_DB=sink_db
-ENV POSTGRES_USER=sink_user
-ENV POSTGRES_PASSWORD=sink_password
+ENV POSTGRES_DB=sinkdb
+ENV POSTGRES_USER=sinkuser
+ENV POSTGRES_PASSWORD=sinkpass
 
 # Install additional extensions if needed
 RUN apk add --no-cache postgresql-contrib
 
 # Copy initialization scripts
-COPY init/ /docker-entrypoint-initdb.d/
-
-# Copy custom postgresql.conf and pg_hba.conf
-COPY postgresql.conf /etc/postgresql/postgresql.conf
-COPY pg_hba.conf /etc/postgresql/pg_hba.conf
+COPY init/01-create-sink-tables.sql /docker-entrypoint-initdb.d/
 
 # Expose the default PostgreSQL port
 EXPOSE 5432
