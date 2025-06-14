@@ -4,21 +4,25 @@ This directory contains Helm charts for Kubernetes deployment.
 
 ## Structure
 
-- `infrastructure/` - Infrastructure components Helm chart (Kafka, Schema Registry, Kafka UI)
+- `infrastructure/` - Complete infrastructure components Helm chart (Kafka, Schema Registry, Kafka UI, PostgreSQL Databases)
 - `connect-postgres/` - PostgreSQL Kafka Connect Helm chart (customer-specific)
 
 ## Infrastructure Chart
 
-The infrastructure chart deploys the core Kafka ecosystem components that are shared across all customers:
+The infrastructure chart deploys all core components that are shared across all customers:
 
-- Kafka Brokers (StatefulSet with 3 replicas)
-- Schema Registry (Deployment)
-- Kafka UI (Deployment)
+- **PostgreSQL Databases:**
+  - Source PostgreSQL (with replication settings for Debezium)
+  - Sink PostgreSQL
+- **Kafka Ecosystem:**
+  - Kafka Brokers (StatefulSet with 3 replicas)
+  - Schema Registry (Deployment)
+  - Kafka UI (Deployment)
 
 ### Deploying Infrastructure
 
 ```bash
-# Deploy infrastructure components
+# Deploy complete infrastructure
 helm install infrastructure ./deployment/infrastructure
 
 # Check deployment status
@@ -27,7 +31,28 @@ kubectl get pods
 # Access services
 kubectl port-forward svc/kafka-ui 8080:8080
 kubectl port-forward svc/schema-registry 8081:8081
+kubectl port-forward svc/postgres-source 5432:5432
+kubectl port-forward svc/postgres-sink 5433:5432
 ```
+
+### Infrastructure Components
+
+#### PostgreSQL Databases
+- **Source Database**: `postgres-source` service on port 5432
+  - Database: `source_db`
+  - User: `source_user`
+  - Password: `source_password`
+  - Configured for logical replication (Debezium)
+
+- **Sink Database**: `postgres-sink` service on port 5432
+  - Database: `sinkdb`
+  - User: `sinkuser`
+  - Password: `sinkpass`
+
+#### Kafka Components
+- **Kafka Brokers**: 3 replicas with persistent storage
+- **Schema Registry**: Single instance for schema management
+- **Kafka UI**: Web interface for monitoring
 
 ## Connect PostgreSQL Chart
 
@@ -75,6 +100,25 @@ The charts use environment variables from customer configuration files:
 - `KAFKA_BOOTSTRAP_SERVERS` - Kafka cluster connection
 - `KAFKA_SCHEMA_REGISTRY_URL` - Schema Registry URL
 
+## Database Access
+
+### Connecting to Databases
+
+```bash
+# Connect to source database
+kubectl exec -it postgres-source-0 -- psql -U source_user -d source_db
+
+# Connect to sink database
+kubectl exec -it postgres-sink-0 -- psql -U sinkuser -d sinkdb
+```
+
+### Database Initialization
+
+Both databases are automatically initialized with:
+- Required users and databases
+- Proper permissions
+- Replication settings (source database only)
+
 ## Monitoring
 
 ```bash
@@ -84,8 +128,12 @@ helm list
 # Check pod status
 kubectl get pods
 
-# View logs
-kubectl logs -f deployment/kafka-connect
+# View database logs
+kubectl logs -f postgres-source-0
+kubectl logs -f postgres-sink-0
+
+# View Kafka logs
+kubectl logs -f kafka-0
 
 # Check connector status
 kubectl exec -it deployment/kafka-connect -- curl localhost:8083/connectors
@@ -97,6 +145,15 @@ kubectl exec -it deployment/kafka-connect -- curl localhost:8083/connectors
 # Remove customer-specific deployment
 helm uninstall customer1-connect
 
-# Remove infrastructure
+# Remove complete infrastructure
 helm uninstall infrastructure
-``` 
+```
+
+## Storage
+
+All components use persistent storage:
+- PostgreSQL databases: 5Gi each
+- Kafka brokers: 10Gi each
+- Default storage class: "standard"
+
+Storage settings can be customized in `values.yaml`. 

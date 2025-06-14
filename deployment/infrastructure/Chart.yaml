@@ -1,6 +1,6 @@
 apiVersion: v2
 name: infrastructure
-description: A Helm chart for Kafka infrastructure components (Kafka Brokers, Kafka UI, Schema Registry)
+description: A Helm chart for complete Kafka infrastructure (Kafka Brokers, Schema Registry, Kafka UI, PostgreSQL Databases)
 type: application
 version: 0.1.0
 appVersion: "1.0.0"

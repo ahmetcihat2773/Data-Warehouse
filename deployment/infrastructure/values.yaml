@@ -3,6 +3,58 @@ global:
   environment: production
   domain: "kafka.local"
 
+# Database Configuration
+database:
+  source:
+    enabled: true
+    image:
+      repository: postgres
+      tag: "15"
+      pullPolicy: IfNotPresent
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClass: "standard"
+    
+    config:
+      database: "source_db"
+      username: "source_user"
+      password: "source_password"
+      
+  sink:
+    enabled: true
+    image:
+      repository: postgres
+      tag: "15"
+      pullPolicy: IfNotPresent
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClass: "standard"
+    
+    config:
+      database: "sinkdb"
+      username: "sinkuser"
+      password: "sinkpass"
+
 # Kafka Brokers Configuration
 kafka:
   enabled: true

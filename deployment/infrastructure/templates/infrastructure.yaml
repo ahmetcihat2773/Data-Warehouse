@@ -1,6 +1,68 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: postgres-source-config
+data:
+  postgresql.conf: |
+    listen_addresses = '*'
+    port = 5432
+    max_connections = 100
+    shared_buffers = 128MB
+    dynamic_shared_memory_type = posix
+    max_wal_size = 1GB
+    min_wal_size = 80MB
+    log_timezone = 'Etc/UTC'
+    datestyle = 'iso, mdy'
+    timezone = 'Etc/UTC'
+    lc_messages = 'en_US.utf8'
+    lc_monetary = 'en_US.utf8'
+    lc_numeric = 'en_US.utf8'
+    lc_time = 'en_US.utf8'
+    default_text_search_config = 'pg_catalog.english'
+    # Replication settings for Debezium
+    wal_level = logical
+    max_wal_senders = 10
+    max_replication_slots = 10
+    wal_sender_timeout = 60s
+    max_connections = 200
+    shared_preload_libraries = 'decoderbufs'
+  init.sql: |
+    CREATE DATABASE source_db;
+    CREATE USER source_user WITH PASSWORD 'source_password';
+    GRANT ALL PRIVILEGES ON DATABASE source_db TO source_user;
+    ALTER USER source_user REPLICATION;
+    ALTER USER source_user CREATEDB;
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-sink-config
+data:
+  postgresql.conf: |
+    listen_addresses = '*'
+    port = 5432
+    max_connections = 100
+    shared_buffers = 128MB
+    dynamic_shared_memory_type = posix
+    max_wal_size = 1GB
+    min_wal_size = 80MB
+    log_timezone = 'Etc/UTC'
+    datestyle = 'iso, mdy'
+    timezone = 'Etc/UTC'
+    lc_messages = 'en_US.utf8'
+    lc_monetary = 'en_US.utf8'
+    lc_numeric = 'en_US.utf8'
+    lc_time = 'en_US.utf8'
+    default_text_search_config = 'pg_catalog.english'
+    max_connections = 200
+  init.sql: |
+    CREATE DATABASE sinkdb;
+    CREATE USER sinkuser WITH PASSWORD 'sinkpass';
+    GRANT ALL PRIVILEGES ON DATABASE sinkdb TO sinkuser;
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: kafka-config
 data:
   server.properties: |
@@ -41,6 +103,146 @@ data:
             type: JMX
     schemaRegistry:
       url: http://schema-registry:8081
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-source
+spec:
+  serviceName: postgres-source
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-source
+  template:
+    metadata:
+      labels:
+        app: postgres-source
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "source_db"
+        - name: POSTGRES_USER
+          value: "source_user"
+        - name: POSTGRES_PASSWORD
+          value: "source_password"
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        - name: config
+          mountPath: /etc/postgresql
+        - name: init
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          {{- toYaml .Values.database.source.resources | nindent 10 }}
+      volumes:
+      - name: config
+        configMap:
+          name: postgres-source-config
+      - name: init
+        configMap:
+          name: postgres-source-config
+          items:
+          - key: init.sql
+            path: init.sql
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.database.source.persistence.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.database.source.persistence.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-source
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+  selector:
+    app: postgres-source
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-sink
+spec:
+  serviceName: postgres-sink
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-sink
+  template:
+    metadata:
+      labels:
+        app: postgres-sink
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "sinkdb"
+        - name: POSTGRES_USER
+          value: "sinkuser"
+        - name: POSTGRES_PASSWORD
+          value: "sinkpass"
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        - name: config
+          mountPath: /etc/postgresql
+        - name: init
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          {{- toYaml .Values.database.sink.resources | nindent 10 }}
+      volumes:
+      - name: config
+        configMap:
+          name: postgres-sink-config
+      - name: init
+        configMap:
+          name: postgres-sink-config
+          items:
+          - key: init.sql
+            path: init.sql
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.database.sink.persistence.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.database.sink.persistence.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-sink
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+  selector:
+    app: postgres-sink
 ---
 apiVersion: apps/v1
 kind: StatefulSet
