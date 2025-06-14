@@ -1,0 +1,241 @@
+# Default values for connect-postgres.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replicaCount: 1
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+image:
+  repository: confluentinc/cp-kafka-connect
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "7.4.0"
+
+# This is for the secretes for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+#This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/ 
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+service:
+  # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+  type: ClusterIP
+  # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+  port: 8083
+
+# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+
+#This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Kafka Connect Configuration
+config:
+  bootstrapServers: "${KAFKA_BOOTSTRAP_SERVERS}"
+  restAdvertisedHostName: "kafka-connect"
+  restPort: 8083
+  groupId: "${CUSTOMER_NAME}-connect-group"
+  
+  # Topic Configuration
+  configStorageTopic: "${CUSTOMER_NAME}-connect-configs"
+  configStorageReplicationFactor: 1
+  offsetStorageTopic: "${CUSTOMER_NAME}-connect-offsets"
+  offsetStorageReplicationFactor: 1
+  statusStorageTopic: "${CUSTOMER_NAME}-connect-status"
+  statusStorageReplicationFactor: 1
+  
+  # Converter Configuration
+  keyConverter: "org.apache.kafka.connect.storage.StringConverter"
+  valueConverter: "io.confluent.connect.avro.AvroConverter"
+  valueConverterSchemaRegistryUrl: "${KAFKA_SCHEMA_REGISTRY_URL}"
+  internalKeyConverter: "org.apache.kafka.connect.json.JsonConverter"
+  internalValueConverter: "org.apache.kafka.connect.json.JsonConverter"
+  
+  # Plugin Configuration
+  pluginPath: "/usr/share/java,/usr/share/confluent-hub-components,/etc/kafka-connect/jars"
+  
+  # Performance Settings
+  offsetFlushIntervalMs: 10000
+  offsetFlushTimeoutMs: 5000
+  taskShutdownGracefulTimeoutMs: 30000
+  producerCompressionType: "snappy"
+  consumerSessionTimeoutMs: 30000
+  
+  # Worker Configuration
+  clientId: "${CUSTOMER_NAME}-connect-worker"
+  heartbeatIntervalMs: 3000
+  sessionTimeoutMs: 30000
+  rebalanceTimeoutMs: 60000
+  
+  # Security Configuration
+  securityProtocol: "PLAINTEXT"
+  saslMechanism: "PLAIN"
+  
+  # Logging Configuration
+  log4jLoggers: "org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR"
+  log4jRootLogLevel: "INFO"
+
+# Database Connection Configuration
+database:
+  source:
+    host: "${SOURCE_DB_HOST}"
+    port: "${SOURCE_DB_PORT}"
+    database: "${SOURCE_DB_NAME}"
+    username: "${SOURCE_DB_USER}"
+    password: "${SOURCE_DB_PASSWORD}"
+  sink:
+    host: "${SINK_DB_HOST}"
+    port: "${SINK_DB_PORT}"
+    database: "${SINK_DB_NAME}"
+    username: "${SINK_DB_USER}"
+    password: "${SINK_DB_PASSWORD}"
+
+# Debezium Configuration
+debezium:
+  slotName: "${CUSTOMER_NAME}_debezium_slot"
+  publicationName: "${CUSTOMER_NAME}_publication"
+
+# Connector Configurations
+connectors:
+  source:
+    enabled: true
+    name: "${SOURCE_CONNECTOR_NAME}"
+    config:
+      connector.class: "io.debezium.connector.postgresql.PostgresConnector"
+      database.hostname: "${SOURCE_DB_HOST}"
+      database.port: "${SOURCE_DB_PORT}"
+      database.user: "${SOURCE_DB_USER}"
+      database.password: "${SOURCE_DB_PASSWORD}"
+      database.dbname: "${SOURCE_DB_NAME}"
+      database.server.name: "${CUSTOMER_NAME}"
+      table.include.list: "public.*"
+      plugin.name: "pgoutput"
+      slot.name: "${CUSTOMER_NAME}_debezium_slot"
+      publication.name: "${CUSTOMER_NAME}_publication"
+      snapshot.mode: "initial"
+      snapshot.locking.mode: "none"
+      include.schema.changes: "true"
+      database.allowPublicKeyRetrieval: "true"
+      database.history.kafka.bootstrap.servers: "${KAFKA_BOOTSTRAP_SERVERS}"
+      database.history.kafka.topic: "${DB_HISTORY_TOPIC}"
+      key.converter: "${config.keyConverter}"
+      value.converter: "${config.valueConverter}"
+      value.converter.schema.registry.url: "${KAFKA_SCHEMA_REGISTRY_URL}"
+      transforms: "unwrap"
+      transforms.unwrap.type: "io.debezium.transforms.ExtractNewRecordState"
+      transforms.unwrap.drop.tombstones: "false"
+      transforms.unwrap.delete.handling.mode: "rewrite"
+
+  sink:
+    enabled: true
+    name: "${SINK_CONNECTOR_NAME}"
+    config:
+      connector.class: "io.confluent.connect.jdbc.JdbcSinkConnector"
+      connection.url: "jdbc:postgresql://${SINK_DB_HOST}:${SINK_DB_PORT}/${SINK_DB_NAME}"
+      connection.user: "${SINK_DB_USER}"
+      connection.password: "${SINK_DB_PASSWORD}"
+      topics: "${CUSTOMER_NAME}.public.*"
+      table.name.format: "${topic}"
+      auto.create: "true"
+      auto.evolve: "true"
+      insert.mode: "upsert"
+      pk.mode: "record_key"
+      delete.enabled: "false"
+      key.converter: "${config.keyConverter}"
+      value.converter: "${config.valueConverter}"
+      value.converter.schema.registry.url: "${KAFKA_SCHEMA_REGISTRY_URL}"
+      key.converter.schemas.enable: "false"
+      value.converter.schemas.enable: "true"
+      transforms: "unwrap"
+      transforms.unwrap.type: "io.debezium.transforms.ExtractNewRecordState"
+      transforms.unwrap.drop.tombstones: "false"
+      transforms.unwrap.delete.handling.mode: "rewrite"

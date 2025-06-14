@@ -3,6 +3,31 @@
 ## Project Overview
 This project implements a real-time data transfer system between databases using Kafka Connect and Debezium. The initial implementation focuses on PostgreSQL to PostgreSQL data transfer, with plans to expand to other database types and file system monitoring.
 
+## Project Structure
+
+```
+dwh/
+├── development/          # Docker Compose setup for local development
+│   ├── docker-compose.yaml
+│   ├── connectors/
+│   ├── Database/
+│   ├── KafkaBrokers/
+│   ├── KafkaUI/
+│   ├── SchemaRegistry/
+│   ├── DataGenerator/
+│   └── ConnectPostgres/
+├── deployment/           # Helm charts for Kubernetes deployment
+│   ├── infrastructure/   # Shared infrastructure components
+│   └── connect-postgres/ # Customer-specific Kafka Connect
+├── customers/            # Customer configuration files
+│   ├── customer1.sh
+│   ├── customer2.sh
+│   └── load_customer.sh
+├── .devcontainer/        # Development container configuration
+├── .github/              # GitHub workflows and configurations
+└── README.md
+```
+
 ## Architecture
 The system consists of the following components:
 - Source PostgreSQL Database
@@ -19,6 +44,7 @@ The system consists of the following components:
 - Dead Letter Queue implementation for error handling
 - Monitoring and alerting system for Kafka Connect status
 - Data validation mechanisms
+- Multi-tenant support with customer-specific configurations
 
 ## Project Phases
 1. Phase 1: PostgreSQL → PostgreSQL data transfer
@@ -31,15 +57,54 @@ The system consists of the following components:
 - Debezium for CDC (Change Data Capture)
 - Confluent Schema Registry for schema management
 - Kafka Connect for data pipeline management
+- Kubernetes & Helm for production deployment
 
-## Setup Instructions
+## Customer Configuration Management
 
-### Prerequisites
-- Docker
-- Docker Compose
+The project supports multiple customers through a configuration management system. Each customer has their own configuration file in the `customers` directory.
 
-### Starting the Services
+### Customer Configuration Structure
+
+Each customer configuration file (`customers/<customer_name>.sh`) contains:
+- Customer Information (name, ID, environment)
+- Source Database Configuration
+- Sink Database Configuration
+- Kafka Configuration
+- Connector Names
+- Topic Prefixes
+
+### Using Customer Configurations
+
+To load a customer's configuration:
+
 ```bash
+# Load customer1 configuration
+source customers/load_customer.sh customer1
+
+# Load customer2 configuration
+source customers/load_customer.sh customer2
+```
+
+The `load_customer.sh` script will:
+1. Load the specified customer's configuration
+2. Verify all required variables are set
+3. Display the loaded configuration details
+
+### Available Customers
+
+To list all available customer configurations:
+```bash
+source customers/load_customer.sh
+```
+
+## Development Environment
+
+For local development and testing, use Docker Compose:
+
+```bash
+# Navigate to development directory
+cd development
+
 # Start all services
 docker compose up -d
 
@@ -47,34 +112,34 @@ docker compose up -d
 docker compose ps
 ```
 
-### Managing Kafka Connectors
+See [development/README.md](development/README.md) for detailed development instructions.
+
+## Production Deployment
+
+For Kubernetes deployment, use Helm charts:
+
 ```bash
-# Create source connector
-curl -X POST -H "Content-Type: application/json" --data-binary @config/source-connector.json http://localhost:8083/connectors
+# Deploy infrastructure (shared components)
+helm install infrastructure ./deployment/infrastructure
 
-# Create sink connector
-curl -X POST -H "Content-Type: application/json" --data-binary @config/sink-connector.json http://localhost:8083/connectors
-
-# List all connectors
-curl http://localhost:8083/connectors
-
-# Check connector status
-curl http://localhost:8083/connectors/postgres-source-connector/status
-
-# List Kafka topics
-docker exec kafka kafka-topics --bootstrap-server localhost:9092 --list
-
-# Delete connectors if needed
-curl -X DELETE http://localhost:8083/connectors/postgres-source-connector
-curl -X DELETE http://localhost:8083/connectors/postgres-sink-connector
+# Deploy customer-specific Kafka Connect
+source customers/load_customer.sh customer1
+helm install customer1-connect ./deployment/connect-postgres
 ```
 
+See [deployment/README.md](deployment/README.md) for detailed deployment instructions.
+
 ## Access Points
+
+### Development Environment
 - Kafka UI: http://localhost:8080
 - Kafka Connect: http://localhost:8083
 - Schema Registry: http://localhost:8081
 - Source PostgreSQL: localhost:5432
 - Sink PostgreSQL: localhost:5435
+
+### Production Environment
+- Access through Kubernetes services and ingress configurations
 
 ## Monitoring
 - Kafka UI provides a web interface for monitoring topics, connectors, and messages

@@ -1,0 +1,29 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  name: postgres-sink-connector
+  labels:
+    strimzi.io/cluster: kafka-connect
+spec:
+  class: io.confluent.connect.jdbc.JdbcSinkConnector
+  tasksMax: 1
+  config:
+    connection.url: jdbc:postgresql://postgres-sink:5432/sinkdb
+    connection.user: sinkuser
+    connection.password: sinkpass
+    topics: source.public.*
+    table.name.format: ${topic}
+    auto.create: "true"
+    auto.evolve: "true"
+    insert.mode: upsert
+    pk.mode: record_key
+    delete.enabled: "false"
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    value.converter: io.confluent.connect.avro.AvroConverter
+    value.converter.schema.registry.url: http://schema-registry:8081
+    key.converter.schemas.enable: "false"
+    value.converter.schemas.enable: "true"
+    transforms: unwrap
+    transforms.unwrap.type: io.debezium.transforms.ExtractNewRecordState
+    transforms.unwrap.drop.tombstones: "false"
+    transforms.unwrap.delete.handling.mode: rewrite 
