@@ -7,6 +7,7 @@ This project implements a real-time data transfer system between databases using
 
 ```
 dwh/
+├── frontend/             # Modern web interface (Next.js + TypeScript + Tailwind)
 ├── development/          # Docker Compose setup for local development
 │   ├── docker-compose.yaml
 │   ├── connectors/
@@ -37,6 +38,7 @@ The system consists of the following components:
 - Schema Registry
 - Kafka UI for management
 - Data Generator (for testing)
+- Modern Web Interface
 
 ## Features
 - Real-time data synchronization between databases
@@ -45,11 +47,13 @@ The system consists of the following components:
 - Monitoring and alerting system for Kafka Connect status
 - Data validation mechanisms
 - Multi-tenant support with customer-specific configurations
+- Modern web interface for management and monitoring
 
 ## Project Phases
 1. Phase 1: PostgreSQL → PostgreSQL data transfer
 2. Phase 2: Support for additional databases (MySQL, MongoDB, etc.)
 3. Phase 3: File/Directory watching (real-time file processing)
+4. Phase 4: Advanced web interface with real-time monitoring
 
 ## Technical Stack
 - Docker & Docker Compose for containerization
@@ -58,6 +62,7 @@ The system consists of the following components:
 - Confluent Schema Registry for schema management
 - Kafka Connect for data pipeline management
 - Kubernetes & Helm for production deployment
+- Next.js, TypeScript & Tailwind CSS for web interface
 
 ## Customer Configuration Management
 
@@ -97,6 +102,26 @@ To list all available customer configurations:
 source customers/load_customer.sh
 ```
 
+## Frontend Development
+
+For the web interface development:
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+See [frontend/README.md](frontend/README.md) for detailed frontend development instructions.
+
 ## Development Environment
 
 For local development and testing, use Docker Compose:
@@ -132,6 +157,7 @@ See [deployment/README.md](deployment/README.md) for detailed deployment instruc
 ## Access Points
 
 ### Development Environment
+- Web Interface: http://localhost:3000 (frontend dev server)
 - Kafka UI: http://localhost:8080
 - Kafka Connect: http://localhost:8083
 - Schema Registry: http://localhost:8081
@@ -142,6 +168,7 @@ See [deployment/README.md](deployment/README.md) for detailed deployment instruc
 - Access through Kubernetes services and ingress configurations
 
 ## Monitoring
+- Modern web interface for system overview and monitoring
 - Kafka UI provides a web interface for monitoring topics, connectors, and messages
 - Health checks are implemented for all services
 - Connector status can be monitored through Kafka Connect REST API
@@ -152,6 +179,7 @@ See [deployment/README.md](deployment/README.md) for detailed deployment instruc
 - Enhanced error handling and retry mechanisms
 - Advanced monitoring and alerting
 - Data validation and quality checks
+- Real-time dashboard with metrics and analytics
 
 SELECT rolname, rolpassword FROM pg_authid WHERE rolname = 'dwh_sink_user';"
 
