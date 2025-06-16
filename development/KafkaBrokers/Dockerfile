@@ -14,19 +14,21 @@ ENV KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
 ENV KAFKA_JMX_PORT=9101
 ENV KAFKA_JMX_HOSTNAME=host.docker.internal
 
-# Copy configuration files to Strimzi's expected locations
-COPY config/server.properties /opt/kafka/config/kraft/server.properties
+# Copy configuration files
+COPY config/server.properties /opt/kafka/config/server.properties
 COPY config/log4j.properties /opt/kafka/config/log4j.properties
 
-# Copy startup script
-COPY --chmod=755 scripts/init-kraft.sh /usr/local/bin/init-kraft.sh
+# Create necessary directories and set permissions
+USER root
+RUN mkdir -p /opt/kafka/logs /tmp/kafka-logs && \
+    chmod -R 777 /opt/kafka/logs /tmp/kafka-logs
 
 # Expose ports
 EXPOSE 9092 29092 29093 9101
 
-# Health check temporarily disabled to allow services to start
-# HEALTHCHECK --interval=15s --timeout=10s --retries=5 \
-#   CMD curl -f --connect-timeout 5 telnet://localhost:9092 || exit 1
+# Health check - simple port check
+HEALTHCHECK --interval=15s --timeout=10s --retries=5 \
+  CMD nc -z localhost 9092 || exit 1
 
-# Use KRaft initialization script
-CMD ["/usr/local/bin/init-kraft.sh"] 
+# Start Kafka with Zookeeper-based configuration
+CMD ["/opt/kafka/bin/kafka-server-start.sh", "/opt/kafka/config/server.properties"] 

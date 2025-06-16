@@ -29,12 +29,8 @@ ENV SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_HEADERS=origin,content-type,accept,auth
 ENV SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL=INFO
 ENV SCHEMA_REGISTRY_LOG4J_LOGGERS=kafka.authorizer.logger=INFO
 
-# Copy custom configuration files
-COPY config/schema-registry.properties /etc/schema-registry/schema-registry.properties
-COPY config/log4j.properties /etc/schema-registry/log4j.properties
-
-# Copy startup scripts with executable permissions
-COPY --chmod=755 scripts/schema-registry-startup.sh /usr/local/bin/schema-registry-startup.sh
+# Configuration will be set via environment variables
+# No need to copy config files - let Confluent Docker handle it
 
 # Create log directory in user space
 RUN mkdir -p /tmp/logs/schema-registry
@@ -43,9 +39,8 @@ RUN mkdir -p /tmp/logs/schema-registry
 EXPOSE 8081
 
 # Health check
-# HEALTHCHECK temporarily disabled to allow startup
-# HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
-#   CMD curl -f http://localhost:8081/subjects || exit 1
+HEALTHCHECK --interval=15s --timeout=10s --retries=5 \
+  CMD curl -f http://localhost:8081/subjects || exit 1
 
-# Use custom startup script
-CMD ["/usr/local/bin/schema-registry-startup.sh"] 
+# Use the standard startup command
+CMD ["/etc/confluent/docker/run"] 

@@ -39,18 +39,14 @@ RUN curl -L -o /usr/share/java/kafka-connect-jdbc/postgresql-42.6.0.jar \
 # Note: Debezium and JDBC connectors will be installed via startup script if available
 # This allows the container to start even if specific connectors aren't available
 
-# Copy custom configuration
-COPY config/connect-distributed.properties /etc/kafka-connect/connect-distributed.properties
-COPY config/log4j.properties /etc/kafka-connect/log4j.properties
-
-# Copy connector configurations
+# Copy connector configurations (keep this for later use)
 COPY workers/ /etc/kafka-connect/connector-configs/
 
-# Copy startup scripts with executable permissions
-COPY --chmod=755 scripts/connect-startup.sh /usr/local/bin/connect-startup.sh
+# Configuration will be set via environment variables
 
-# Copy any additional connector JARs
-COPY connectors/ /etc/kafka-connect/jars/
+# Copy any additional connector JARs (if they exist)
+# COPY connectors/ /etc/kafka-connect/jars/
+# Uncomment above line and create connectors/ directory if you have custom connector JARs
 
 # Create necessary directories in user space
 RUN mkdir -p /tmp/logs/kafka-connect
@@ -59,9 +55,8 @@ RUN mkdir -p /tmp/logs/kafka-connect
 EXPOSE 8083
 
 # Health check
-# HEALTHCHECK temporarily disabled to allow startup
-# HEALTHCHECK --interval=10s --timeout=5s --retries=10 \
-#   CMD curl -f http://localhost:8083/connectors || exit 1
+HEALTHCHECK --interval=15s --timeout=10s --retries=10 \
+  CMD curl -f http://localhost:8083/connectors || exit 1
 
-# Use custom startup script
-CMD ["/usr/local/bin/connect-startup.sh"] 
+# Use standard Confluent startup
+CMD ["/etc/confluent/docker/run"] 
